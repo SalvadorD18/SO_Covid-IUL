@@ -1,0 +1,2 @@
+12345:Ana Correia:CSLisboa:0:0
+98765:Joao Vieira:CSPorto:0:1
