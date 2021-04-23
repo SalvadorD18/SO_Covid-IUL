@@ -1,4 +1,0 @@
-Joao Vieira:98765:Joaquim Pedroso:10003:CSPorto:2021-03-14
-Joao Vieira:98765:Ana Silva:10004:CSPorto:2021-03-14
-Joao Vieira:98765:Carla Braga:10010:CSPorto:2021-03-14
-Joao Vieira:98765:Ema Aguiar:10013:CSPorto:2021-03-14
