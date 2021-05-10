@@ -472,11 +472,14 @@ void termina_servidor_dedicado(int sinal) {
     // S12) Implemente a função termina_servidor_dedicado(), que irá tratar do fecho do servidor dedicado, e que:
 
     // S12.1) Envia a resposta para o Cidadao, chamando a função envia_resposta_cidadao() com o campo status=CANCELADA, para indicar que a consulta foi cancelada;
+    resposta.dados.status = CANCELADA;
+    envia_resposta_cidadao();
     // S12.2) Liberta a vaga vaga_ativa da BD de Vagas, invocando a função liberta_vaga(vaga_ativa);
-
+    liberta_vaga(vaga_ativa);
     // S12.3) Termina o processo do servidor dedicado com exit status 0;
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
-    // sucesso("S12.3) Servidor Dedicado Terminado");
+    sucesso("S12.3) Servidor Dedicado Terminado");
+    exit(0);
 
     debug(">");
 }
