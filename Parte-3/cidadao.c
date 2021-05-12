@@ -249,3 +249,8 @@ void cancela_pedido(int sinal) {
     }
     debug(">");
 }
+
+
+// Tentar fazer vacinação completa
+
+// CTRL+C não funciona
