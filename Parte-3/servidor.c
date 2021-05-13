@@ -355,20 +355,20 @@ void servidor_dedicado() {
     envia_resposta_cidadao();
     // S7.3) Coloca a disponibilidade do enfermeiro afeto à vaga_ativa com o valor 0 (Indisponível);
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
-    //sem_mutex_down();
+    sem_mutex_down();
     db->enfermeiros[db->vagas[vaga_ativa].index_enfermeiro].disponibilidade = 0;
     sucesso("S7.3) Enfermeiro associado à vaga %d indisponível", vaga_ativa);
 
     // S7.4) Imprime uma mensagem;
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
     sucesso("S7.4) Vacina em curso para o cidadão %d, %s, e com o enfermeiro %d, %s na vaga %d", db->cidadaos[db->vagas[vaga_ativa].index_cidadao].num_utente, db->cidadaos[db->vagas[vaga_ativa].index_cidadao].nome, db->enfermeiros[db->vagas[vaga_ativa].index_enfermeiro].ced_profissional, db->enfermeiros[db->vagas[vaga_ativa].index_enfermeiro].nome, vaga_ativa);
-    //sem_mutex_up();
+    sem_mutex_up();
     // S7.4) Aguarda (em espera passiva!) TEMPO_CONSULTA segundos;
     sleep(TEMPO_CONSULTA);
     // S7.5) Envia nova resposta para o Cidadao, chamando a função envia_resposta_cidadao() contendo os dados do Cidadao preenchidos em S5.1 e o campo status = TERMINADA, para indicar que a consulta terminou com sucesso;
     resposta.dados.status = TERMINADA;
     envia_resposta_cidadao();
-    //sem_mutex_down();
+    sem_mutex_down();
     // S7.6) Atualiza os dados do cidadão (incrementa estado_vacinacao) na BD de Cidadãos
     db->cidadaos[db->vagas[vaga_ativa].index_cidadao].estado_vacinacao++;
     // S7.6) Atualiza os dados do cidadão (PID_cidadao = -1) na BD de Cidadãos
@@ -379,7 +379,7 @@ void servidor_dedicado() {
     db->enfermeiros[db->vagas[vaga_ativa].index_enfermeiro].disponibilidade = 1;
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
     sucesso("S7.6) Cidadão atualizado na BD para estado_vacinacao=%d, Enfermeiro atualizado na BD para nr_vacinas_dadas=%d e disponibilidade=%d", db->cidadaos[db->vagas[vaga_ativa].index_cidadao].estado_vacinacao, db->enfermeiros[db->vagas[vaga_ativa].index_enfermeiro].nr_vacinas_dadas, db->enfermeiros[db->vagas[vaga_ativa].index_enfermeiro].disponibilidade);  
-    //sem_mutex_up();
+    sem_mutex_up();
     // S7.7) Liberta a vaga vaga_ativa da BD de Vagas, invocando a função liberta_vaga(vaga_ativa);
     liberta_vaga(vaga_ativa);  // tentou libertar a vaga e deu erro "Terminated"
     // S7.8) Termina o processo Servidor Dedicado (filho) com exit status 0.
