@@ -403,15 +403,17 @@ int reserva_vaga(int index_cidadao, int index_enfermeiro) {
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
     //sem_mutex_down();
     debug("%d", vaga_ativa);
-    for(int v = 0; v < MAX_VAGAS; v++){
+    int v;
+    for(v = 0; v < MAX_VAGAS; v++){
         if (db->vagas[v].index_cidadao < 0){
             vaga_ativa = v;
     // S8.1.2) Atualiza a entrada de Vagas vaga_ativa com o índice do cidadão e do enfermeiro
             db->vagas[vaga_ativa].index_cidadao = index_cidadao;
             db->vagas[vaga_ativa].index_enfermeiro = index_enfermeiro;
-            sucesso("S8.1.1) Encontrou uma vaga livre com o index %d", v);
+            break;
         }
     }
+    sucesso("S8.1.1) Encontrou uma vaga livre com o index %d", v);
     //sem_mutex_up();
     // S8.1.3) Retorna o valor do índice de vagas vaga_ativa ou -1 se não encontrou nenhuma vaga
     return vaga_ativa;
@@ -456,8 +458,8 @@ void cancela_pedido() {
             sucesso("S10.2) Enviado sinal SIGTERM ao Servidor Dedicado com PID=%d", db->vagas[v].PID_filho);
         }
     }
-    erro("S10.1) Não foi encontrada nenhuma sessão do cidadão %d, %s", db->cidadaos[c].num_utente, db->cidadaos[c].nome);
     //sem_mutex_up();
+    erro("S10.1) Não foi encontrada nenhuma sessão do cidadão %d, %s", db->cidadaos[c].num_utente, db->cidadaos[c].nome); 
 
     debug(">");
 }
@@ -475,7 +477,7 @@ void termina_servidor(int sinal) {
     debug("PID: %d", db->vagas[vaga_ativa].PID_filho);
     for(int v = 0; v < MAX_VAGAS; v++){
         if(db->vagas[v].index_cidadao != -1){
-            kill(db->vagas[vaga_ativa].PID_filho, SIGTERM);
+            kill(db->vagas[v].PID_filho, SIGTERM);
         }
     }
     // S11.2) Grava o ficheiro FILE_ENFERMEIROS, usando a função save_binary();
