@@ -1,12 +1,15 @@
-/******************************************************************************
+/*************************************************************************************
  ** ISCTE-IUL: Trabalho prático 3 de Sistemas Operativos
  **
  ** Aluno: Nº: 98475  Nome: Salvador de Oliveira Carvalho Nunes Domingues 
  ** Nome do Módulo: servidor.c v3
  ** Descrição/Explicação do Módulo: 
- **
- **
- ******************************************************************************/
+ ** Este módulo irá funcionar de acordo com as informações fornecidas pelo processo
+ ** cidadao, em que, dependendo das informações fornecidas, irá ou não proceder á
+ ** vacinação, tendo em conta se está ou não registado na BD, se há ou não enfermeiro
+ ** para a sua localidade, e se este tem ou não disponibilidade, bem como se há ou não
+ ** vagas para iniciar a vacinação.
+ **************************************************************************************/
 #include "common.h"
 #include "utils.h"
 #include <sys/stat.h>
@@ -284,6 +287,7 @@ void processa_pedido() {
                 resposta.dados.status = AGUARDAR;
             } else {
                 sucesso("S5.2) Enfermeiro do CS %s encontrado, disponibilidade=%d, status=%d", db->cidadaos[c].localidade, db->enfermeiros[e].disponibilidade, resposta.dados.status);
+    sem_mutex_up();
     // S5.3) Caso o enfermeiro esteja disponível, procura uma vaga para vacinação na BD Vagas. Para tal, chama a função reserva_vaga(Index_Cidadao, Index_Enfermeiro) usando os índices do Cidadão e do Enfermeiro nas respetivas BDs:
     //      • Se essa função tiver encontrado e reservado uma vaga => status = OK;
     //      • Se essa função não conseguiu encontrar uma vaga livre => status = AGUARDAR.
@@ -299,7 +303,6 @@ void processa_pedido() {
             }
         }
     }
-    sem_mutex_up();
     // S5.4) Se no final de todos os checks, status for OK, chama a função vacina(),
     if (OK == resposta.dados.status){
         vacina();
@@ -403,7 +406,7 @@ int reserva_vaga(int index_cidadao, int index_enfermeiro) {
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
     debug("%d", vaga_ativa);
     int v;
-    //sem_mutex_down();
+    sem_mutex_down();
     for(v = 0; v < MAX_VAGAS; v++){
         if (db->vagas[v].index_cidadao < 0){
             vaga_ativa = v;
@@ -413,8 +416,8 @@ int reserva_vaga(int index_cidadao, int index_enfermeiro) {
             break;
         }
     }
+    sem_mutex_up();
     sucesso("S8.1.1) Encontrou uma vaga livre com o index %d", v);
-    //sem_mutex_up();
     // S8.1.3) Retorna o valor do índice de vagas vaga_ativa ou -1 se não encontrou nenhuma vaga
     return vaga_ativa;
 
@@ -458,8 +461,8 @@ void cancela_pedido() {
             sucesso("S10.2) Enviado sinal SIGTERM ao Servidor Dedicado com PID=%d", db->vagas[v].PID_filho);
         }
     }
+    erro("S10.1) Não foi encontrada nenhuma sessão do cidadão %d, %s", db->cidadaos[c].num_utente, db->cidadaos[c].nome);
     sem_mutex_up();
-    erro("S10.1) Não foi encontrada nenhuma sessão do cidadão %d, %s", db->cidadaos[c].num_utente, db->cidadaos[c].nome); 
 
     debug(">");
 }
