@@ -108,12 +108,14 @@ void espera_resposta_servidor() {
 
     // Espera a resposta do processo Servidor (na fila de mensagens com o tipo = PID_Cidadao) e preenche a mensagem enviada pelo processo Servidor na variável global resposta; 
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
-    int status = msgrcv(msg_id, &resposta, sizeof(resposta), mensagem.dados.PID_cidadao, 0);
+    int status = msgrcv(msg_id, &resposta, sizeof(resposta.dados), mensagem.dados.PID_cidadao, 0);
     exit_on_error(status, "Não é possível ler a resposta do servidor");
     sucesso("Servidor enviou resposta");
 
     debug(">");
 }
+
+// testar sem mutex
 
 /**
  * Envia o pedido ao servidor e aguarda a sua resposta
@@ -196,21 +198,20 @@ void vacina() {
     print_info(resposta.dados.cidadao);
 
     // C6.2) Chama novamente a função espera_resposta_servidor(), que espera uma nova resposta do processo Servidor (na fila de mensagens com o tipo = PID_Cidadao) e preenche a mensagem enviada pelo processo Servidor na variável global resposta;
-    espera_resposta_servidor();
+    espera_resposta_servidor(); // FICA AQUI À ESPERA
+    
     // C6.3) O comportamento do processo Cidadão agora irá depender da resposta enviada pelo processo Servidor no campo status:
 
     // C6.3.1) Se o status for TERMINADA, imprime uma mensagem de sucesso, e termina com exit status 0;
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
     if (resposta.dados.status == TERMINADA){
-    sucesso("C6.3.1) Utente %d, %s vacinado com sucesso", mensagem.dados.num_utente, mensagem.dados.nome);
-    exit(0);
-    }
-
+        sucesso("C6.3.1) Utente %d, %s vacinado com sucesso", mensagem.dados.num_utente, mensagem.dados.nome);
+        exit(0);
     // C6.3.2) Se o status for CANCELADA, imprime uma mensagem de erro, e termina com exit status 1;
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
-    if (resposta.dados.status == CANCELADA){
-    erro("C6.3.2) O servidor cancelou a vacinação em curso");
-    exit(1);
+    } else if (resposta.dados.status == CANCELADA){
+        erro("C6.3.2) O servidor cancelou a vacinação em curso");
+        exit(1);
     }
 
     debug(">");
