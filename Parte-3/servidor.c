@@ -447,21 +447,24 @@ void cancela_pedido() {
     // S10.1) Procura na BD de Vagas a vaga correspondente ao Cidadao em questão (procura por index_cidadao). Se encontrar a entrada correspondente, obtém o PID_filho do Servidor Dedicado correspondente;
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
     sem_mutex_down();
-    int c;
-    for (c = 0; c < db->num_cidadaos; c++){
+    int cid;
+    for (int c = 0; c < db->num_cidadaos; c++){
         if (db->cidadaos[c].num_utente == mensagem.dados.num_utente){
+            cid = c;
         }
     }
+    sem_mutex_up();
+    sem_mutex_down();
     for(int v = 0; v < MAX_VAGAS; v++){
-        if (db->vagas[v].index_cidadao == c){  
-            sucesso("S10.1) Foi encontrada a sessão do cidadão %d, %s na sala com o index %d", db->cidadaos[c].num_utente, db->cidadaos[c].nome, c);
+        if (db->vagas[v].index_cidadao == cid){  
+            sucesso("S10.1) Foi encontrada a sessão do cidadão %d, %s na sala com o index %d", db->cidadaos[cid].num_utente, db->cidadaos[cid].nome, cid);
     // S10.2) Envia um sinal SIGTERM ao processo Servidor Dedicado (filho) que está a tratar da vacinação;
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
             kill(db->vagas[v].PID_filho, SIGTERM);
             sucesso("S10.2) Enviado sinal SIGTERM ao Servidor Dedicado com PID=%d", db->vagas[v].PID_filho);
         }
     }
-    erro("S10.1) Não foi encontrada nenhuma sessão do cidadão %d, %s", db->cidadaos[c].num_utente, db->cidadaos[c].nome);
+    erro("S10.1) Não foi encontrada nenhuma sessão do cidadão %d, %s", db->cidadaos[cid].num_utente, db->cidadaos[cid].nome);
     sem_mutex_up();
 
     debug(">");
