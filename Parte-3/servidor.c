@@ -156,7 +156,7 @@ void init_database() {
     exit_on_null(db, "S2) Erro a ligar a Memória Dinâmica ao projeto");
 
     // • Lê o ficheiro FILE_CIDADAOS e armazena o seu conteúdo na base de dados usando a função read_binary(), assim preenchendo os campos db->cidadaos e db->num_cidadaos. Se não o conseguir, dá erro e termina com exit status 1;
-    //sem_mutex_down();
+    sem_mutex_down();
     file_size = read_binary(FILE_CIDADAOS, db->cidadaos, MAX_CIDADAOS * sizeof(Cidadao));
     db->num_cidadaos = file_size / sizeof(Cidadao);
 
@@ -169,7 +169,7 @@ void init_database() {
         db->vagas[v].index_cidadao = -1;
     }
     sucesso("S2) Base de dados carregada com %d cidadãos e %d enfermeiros", db->num_cidadaos, db->num_enfermeiros);
-    //sem_mutex_up();
+    sem_mutex_up();
 
     debug(">");
 }
@@ -243,7 +243,7 @@ void processa_pedido() {
     //       • Se o Cidadão na BD Cidadãos tiver estado_vacinacao = 2 => status = VACINADO;
     //       • Se o Cidadão na BD Cidadãos tiver PID_cidadao > 0 => status = EMCURSO; caso contrário, afeta o PID_cidadao da BD Cidadãos com o valor do PID_cidadao da mensagem;
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
-    //sem_mutex_down();
+    sem_mutex_down();
     int c;
     for (c = 0; c < db->num_cidadaos; c++){
         if (db->cidadaos[c].num_utente == mensagem.dados.num_utente && strcmp(db->cidadaos[c].nome, mensagem.dados.nome) == 0){
@@ -284,7 +284,6 @@ void processa_pedido() {
                 resposta.dados.status = AGUARDAR;
             } else {
                 sucesso("S5.2) Enfermeiro do CS %s encontrado, disponibilidade=%d, status=%d", db->cidadaos[c].localidade, db->enfermeiros[e].disponibilidade, resposta.dados.status);
-                //sem_mutex_up();
     // S5.3) Caso o enfermeiro esteja disponível, procura uma vaga para vacinação na BD Vagas. Para tal, chama a função reserva_vaga(Index_Cidadao, Index_Enfermeiro) usando os índices do Cidadão e do Enfermeiro nas respetivas BDs:
     //      • Se essa função tiver encontrado e reservado uma vaga => status = OK;
     //      • Se essa função não conseguiu encontrar uma vaga livre => status = AGUARDAR.
@@ -300,14 +299,15 @@ void processa_pedido() {
             }
         }
     }
+    sem_mutex_up();
     // S5.4) Se no final de todos os checks, status for OK, chama a função vacina(),
     if (OK == resposta.dados.status){
         vacina();
     } else {
     // S5.4) caso contrário, atualiza o PID_cidadao=-1 na BD de Cidadãos e chama a função envia_resposta_cidadao(), que envia a resposta ao Cidadão;
-        //sem_mutex_down();
+        sem_mutex_down();
         db->cidadaos[c].PID_cidadao = -1;
-        //sem_mutex_up();
+        sem_mutex_up();
         envia_resposta_cidadao();
     }
 
@@ -326,16 +326,16 @@ void vacina() {
     if (-1 == pidFilho){
     exit_on_error(pidFilho, "S6.1) Não foi possível criar um novo processo");
     }
-    //sem_mutex_down();
     if (0 == pidFilho) {   // Processo FILHO
         sucesso("S6.1) Criado um processo filho com PID_filho=%d", pidFilho);
         // S6.2) O processo filho chama a função servidor_dedicado();
         servidor_dedicado();
     } else {     // Processo PAI
         // S6.3) O processo pai regista o process ID do processo filho no campo PID_filho na BD de Vagas com o índice da variável global vaga_ativa;
+        sem_mutex_down();
         db->vagas[vaga_ativa].PID_filho = pidFilho;
+        sem_mutex_up();
     }
-    //sem_mutex_up();
 
     debug(">");
 }
@@ -401,9 +401,9 @@ int reserva_vaga(int index_cidadao, int index_enfermeiro) {
     
     // S8.1.1) Atualiza o valor da variável global vaga_ativa com o índice da vaga encontrada;
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
-    //sem_mutex_down();
     debug("%d", vaga_ativa);
     int v;
+    //sem_mutex_down();
     for(v = 0; v < MAX_VAGAS; v++){
         if (db->vagas[v].index_cidadao < 0){
             vaga_ativa = v;
@@ -427,10 +427,10 @@ int reserva_vaga(int index_cidadao, int index_enfermeiro) {
 void liberta_vaga(int index_vaga) {
     debug("<");
     
-    //sem_mutex_down();
+    sem_mutex_down();
     db->cidadaos[db->vagas[index_vaga].index_cidadao].PID_cidadao = -1;
     db->vagas[index_vaga].index_cidadao = -1; 
-    //sem_mutex_up();
+    sem_mutex_up();
 
     debug(">");
 }
@@ -443,7 +443,7 @@ void cancela_pedido() {
     // S10) Processa o cancelamento de um pedido de vacinação e envia uma resposta ao processo Cidadão. Para este efeito, a função:
     // S10.1) Procura na BD de Vagas a vaga correspondente ao Cidadao em questão (procura por index_cidadao). Se encontrar a entrada correspondente, obtém o PID_filho do Servidor Dedicado correspondente;
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
-    //sem_mutex_down();
+    sem_mutex_down();
     int c;
     for (c = 0; c < db->num_cidadaos; c++){
         if (db->cidadaos[c].num_utente == mensagem.dados.num_utente){
@@ -458,7 +458,7 @@ void cancela_pedido() {
             sucesso("S10.2) Enviado sinal SIGTERM ao Servidor Dedicado com PID=%d", db->vagas[v].PID_filho);
         }
     }
-    //sem_mutex_up();
+    sem_mutex_up();
     erro("S10.1) Não foi encontrada nenhuma sessão do cidadão %d, %s", db->cidadaos[c].num_utente, db->cidadaos[c].nome); 
 
     debug(">");
@@ -473,7 +473,7 @@ void termina_servidor(int sinal) {
     // S11) Implemente a função termina_servidor(), que irá tratar do fecho do servidor, e que:
 
     // S11.1) Envia um sinal SIGTERM a todos os processos Servidor Dedicado (filhos) ativos;
-    //sem_mutex_down();
+    sem_mutex_down();
     debug("PID: %d", db->vagas[vaga_ativa].PID_filho);
     for(int v = 0; v < MAX_VAGAS; v++){
         if(db->vagas[v].index_cidadao != -1){
@@ -484,7 +484,7 @@ void termina_servidor(int sinal) {
     save_binary(FILE_ENFERMEIROS, db->enfermeiros, db->num_enfermeiros * sizeof(Enfermeiro));
     // S11.3) Grava o ficheiro FILE_CIDADAOS, usando a função save_binary();
     save_binary(FILE_CIDADAOS, db->cidadaos, db->num_cidadaos * sizeof(Cidadao));
-    //sem_mutex_up();
+    sem_mutex_up();
     // S11.4) Remove do sistema (IPC Remove) os semáforos, a Memória Partilhada e a Fila de Mensagens.
     semctl(sem_id, 1, IPC_RMID);
     shmctl(shm_id, IPC_RMID, 0);
