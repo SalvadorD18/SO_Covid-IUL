@@ -483,6 +483,7 @@ void termina_servidor(int sinal) {
     debug("PID: %d", db->vagas[vaga_ativa].PID_filho);
     for(int v = 0; v < MAX_VAGAS; v++){
         if(db->vagas[v].index_cidadao != -1){
+            sem_mutex_up();
             kill(db->vagas[v].PID_filho, SIGTERM);
         }
     }
@@ -490,7 +491,6 @@ void termina_servidor(int sinal) {
     save_binary(FILE_ENFERMEIROS, db->enfermeiros, db->num_enfermeiros * sizeof(Enfermeiro));
     // S11.3) Grava o ficheiro FILE_CIDADAOS, usando a função save_binary();
     save_binary(FILE_CIDADAOS, db->cidadaos, db->num_cidadaos * sizeof(Cidadao));
-    sem_mutex_up();
     // S11.4) Remove do sistema (IPC Remove) os semáforos, a Memória Partilhada e a Fila de Mensagens.
     semctl(sem_id, 1, IPC_RMID);
     shmctl(shm_id, IPC_RMID, 0);
