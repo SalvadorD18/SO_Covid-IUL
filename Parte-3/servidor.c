@@ -455,14 +455,15 @@ void cancela_pedido() {
     }
     for(int v = 0; v < MAX_VAGAS; v++){
         if (db->vagas[v].index_cidadao == cid){  
+            debug("QUÉ PASSA?");
             sucesso("S10.1) Foi encontrada a sessão do cidadão %d, %s na sala com o index %d", db->cidadaos[cid].num_utente, db->cidadaos[cid].nome, cid);
+            sem_mutex_up();
     // S10.2) Envia um sinal SIGTERM ao processo Servidor Dedicado (filho) que está a tratar da vacinação;
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
             kill(db->vagas[v].PID_filho, SIGTERM);
             sucesso("S10.2) Enviado sinal SIGTERM ao Servidor Dedicado com PID=%d", db->vagas[v].PID_filho);
         }
     }
-    sem_mutex_up();
     erro("S10.1) Não foi encontrada nenhuma sessão do cidadão %d, %s", db->cidadaos[cid].num_utente, db->cidadaos[cid].nome); 
 
     debug(">");
@@ -479,8 +480,11 @@ void termina_servidor(int sinal) {
     // S11.1) Envia um sinal SIGTERM a todos os processos Servidor Dedicado (filhos) ativos;
     sem_mutex_down();
     debug("PID: %d", db->vagas[vaga_ativa].PID_filho);
-    for(int v = 0; v < MAX_VAGAS; v++){
+    int v;
+    for(v = 0; v < MAX_VAGAS; v++){
         if(db->vagas[v].index_cidadao != -1){
+            db->cidadaos[db->vagas[v].index_cidadao].PID_cidadao = -1;
+            sem_mutex_up();
             kill(db->vagas[v].PID_filho, SIGTERM);
         }
     }
@@ -488,7 +492,6 @@ void termina_servidor(int sinal) {
     save_binary(FILE_ENFERMEIROS, db->enfermeiros, db->num_enfermeiros * sizeof(Enfermeiro));
     // S11.3) Grava o ficheiro FILE_CIDADAOS, usando a função save_binary();
     save_binary(FILE_CIDADAOS, db->cidadaos, db->num_cidadaos * sizeof(Cidadao));
-    sem_mutex_up();
     // S11.4) Remove do sistema (IPC Remove) os semáforos, a Memória Partilhada e a Fila de Mensagens.
     semctl(sem_id, 1, IPC_RMID);
     shmctl(shm_id, IPC_RMID, 0);
