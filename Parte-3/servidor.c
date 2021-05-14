@@ -484,6 +484,7 @@ void termina_servidor(int sinal) {
     for(v = 0; v < MAX_VAGAS; v++){
         if(db->vagas[v].index_cidadao != -1){
             db->cidadaos[db->vagas[v].index_cidadao].PID_cidadao = -1;
+            db->enfermeiros[db->vagas[v].index_enfermeiro].disponibilidade = 1;
             //sem_mutex_up();
             kill(db->vagas[v].PID_filho, SIGTERM);
         }
