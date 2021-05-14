@@ -478,13 +478,13 @@ void termina_servidor(int sinal) {
     // S11) Implemente a função termina_servidor(), que irá tratar do fecho do servidor, e que:
 
     // S11.1) Envia um sinal SIGTERM a todos os processos Servidor Dedicado (filhos) ativos;
-    sem_mutex_down();
+    //sem_mutex_down();
     debug("PID: %d", db->vagas[vaga_ativa].PID_filho);
     int v;
     for(v = 0; v < MAX_VAGAS; v++){
         if(db->vagas[v].index_cidadao != -1){
             db->cidadaos[db->vagas[v].index_cidadao].PID_cidadao = -1;
-            sem_mutex_up();
+            //sem_mutex_up();
             kill(db->vagas[v].PID_filho, SIGTERM);
         }
     }
