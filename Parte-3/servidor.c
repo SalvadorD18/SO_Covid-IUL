@@ -349,7 +349,6 @@ void vacina() {
 void servidor_dedicado() {
     debug("<");
 
-    debug("MENSAGEM %d", resposta.tipo);
     // S7.1) Arma o sinal SIGTERM;
     signal(SIGTERM, termina_servidor_dedicado);
 
@@ -404,9 +403,7 @@ int reserva_vaga(int index_cidadao, int index_enfermeiro) {
     
     // S8.1.1) Atualiza o valor da variável global vaga_ativa com o índice da vaga encontrada;
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
-    debug("%d", vaga_ativa);
     int v;
-    //sem_mutex_down();
     for(v = 0; v < MAX_VAGAS; v++){
         if (db->vagas[v].index_cidadao < 0){
             vaga_ativa = v;
@@ -417,7 +414,6 @@ int reserva_vaga(int index_cidadao, int index_enfermeiro) {
         }
     }
     sucesso("S8.1.1) Encontrou uma vaga livre com o index %d", v);
-    //sem_mutex_up();
     // S8.1.3) Retorna o valor do índice de vagas vaga_ativa ou -1 se não encontrou nenhuma vaga
     return vaga_ativa;
 
@@ -455,8 +451,8 @@ void cancela_pedido() {
     }
     for(int v = 0; v < MAX_VAGAS; v++){
         if (db->vagas[v].index_cidadao == cid){  
-            debug("QUÉ PASSA?");
             sucesso("S10.1) Foi encontrada a sessão do cidadão %d, %s na sala com o index %d", db->cidadaos[cid].num_utente, db->cidadaos[cid].nome, cid);
+            db->enfermeiros[db->vagas[v].index_enfermeiro].disponibilidade = 1; // Atualiza a disponibilidade do enfermeiro para 1, caso o cidadão cancele a vacinação, de forma a que o enfermeiro da localidade em questão, esteja prontamente disponível para um eventual novo pedido de vacinação.
             sem_mutex_up();
     // S10.2) Envia um sinal SIGTERM ao processo Servidor Dedicado (filho) que está a tratar da vacinação;
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
@@ -478,14 +474,12 @@ void termina_servidor(int sinal) {
     // S11) Implemente a função termina_servidor(), que irá tratar do fecho do servidor, e que:
 
     // S11.1) Envia um sinal SIGTERM a todos os processos Servidor Dedicado (filhos) ativos;
-    //sem_mutex_down();
     debug("PID: %d", db->vagas[vaga_ativa].PID_filho);
     int v;
     for(v = 0; v < MAX_VAGAS; v++){
         if(db->vagas[v].index_cidadao != -1){
-            db->cidadaos[db->vagas[v].index_cidadao].PID_cidadao = -1;
-            db->enfermeiros[db->vagas[v].index_enfermeiro].disponibilidade = 1;
-            //sem_mutex_up();
+            db->cidadaos[db->vagas[v].index_cidadao].PID_cidadao = -1; // Atualiza o PID dos cidadãos que estavam em processo de vacinação, antes do 'servidor' receber um CTRL+C, de forma a que estejam todos os cidadão com o PID a -1, para da próxima vez que tentarem proceder à vacinação, o fazerem sem problemas.
+            db->enfermeiros[db->vagas[v].index_enfermeiro].disponibilidade = 1; // Atualiza a disponibilidade dos enfermeiros que estavam a proceder uma vacinação para 1, de forma a que da próxima vez que o 'servidor' for executado, estejam todos os enfermeiros disponíveis para iniciar uma vacinação.
             kill(db->vagas[v].PID_filho, SIGTERM);
         }
     }

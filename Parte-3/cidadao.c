@@ -1,12 +1,14 @@
-/******************************************************************************
+/*************************************************************************************
  ** ISCTE-IUL: Trabalho prático 3 de Sistemas Operativos
  **
  ** Aluno: Nº: 98475  Nome: Salvador de Oliveira Carvalho Nunes Domingues 
  ** Nome do Módulo: cidadao.c v3
  ** Descrição/Explicação do Módulo: 
- **
- **
- ******************************************************************************/
+ ** Este módulo irá pedir ao cidadão para introduzir o seu número de utente e o 
+ ** seu nome, de forma a proceder à pesquisa na BD pelas suas respectivas informações
+ ** e pelo enfermeiro registado correspondente à sua localidade, de forma a avaliar
+ ** o seu ponto de situação para proceder à vacinação.
+ **************************************************************************************/
 #include "common.h"
 #include "utils.h"
 #include <signal.h>
@@ -115,8 +117,6 @@ void espera_resposta_servidor() {
     debug(">");
 }
 
-// testar sem mutex
-
 /**
  * Envia o pedido ao servidor e aguarda a sua resposta
  */
@@ -128,9 +128,7 @@ void pedido() {
         envia_mensagem_servidor();
         // C4) Chama a função espera_resposta_servidor(), que espera a resposta do processo Servidor (na fila de mensagens com o tipo = PID_Cidadao) e preenche a mensagem enviada pelo processo Servidor na variável global resposta; em caso de erro, termina com erro e exit status 1.
         espera_resposta_servidor();
-
         // C5) O comportamento do processo Cidadão agora irá depender da resposta enviada pelo processo Servidor no campo status:
-
         // C5.1) Se o status for DESCONHECIDO, imprime uma mensagem de erro, e termina com exit status 1;
         // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
         if (resposta.dados.status == DESCONHECIDO){
@@ -198,7 +196,7 @@ void vacina() {
     print_info(resposta.dados.cidadao);
 
     // C6.2) Chama novamente a função espera_resposta_servidor(), que espera uma nova resposta do processo Servidor (na fila de mensagens com o tipo = PID_Cidadao) e preenche a mensagem enviada pelo processo Servidor na variável global resposta;
-    espera_resposta_servidor(); // FICA AQUI À ESPERA
+    espera_resposta_servidor(); 
     
     // C6.3) O comportamento do processo Cidadão agora irá depender da resposta enviada pelo processo Servidor no campo status:
 
@@ -207,9 +205,10 @@ void vacina() {
     if (resposta.dados.status == TERMINADA){
         sucesso("C6.3.1) Utente %d, %s vacinado com sucesso", mensagem.dados.num_utente, mensagem.dados.nome);
         exit(0);
+    }
     // C6.3.2) Se o status for CANCELADA, imprime uma mensagem de erro, e termina com exit status 1;
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
-    } else if (resposta.dados.status == CANCELADA){
+    if (resposta.dados.status == CANCELADA){
         erro("C6.3.2) O servidor cancelou a vacinação em curso");
         exit(1);
     }
@@ -250,8 +249,3 @@ void cancela_pedido(int sinal) {
     }
     debug(">");
 }
-
-
-// Tentar fazer vacinação completa
-
-// CTRL+C não funciona
