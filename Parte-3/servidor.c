@@ -287,7 +287,6 @@ void processa_pedido() {
                 resposta.dados.status = AGUARDAR;
             } else {
                 sucesso("S5.2) Enfermeiro do CS %s encontrado, disponibilidade=%d, status=%d", db->cidadaos[c].localidade, db->enfermeiros[e].disponibilidade, resposta.dados.status);
-    sem_mutex_up();
     // S5.3) Caso o enfermeiro esteja disponível, procura uma vaga para vacinação na BD Vagas. Para tal, chama a função reserva_vaga(Index_Cidadao, Index_Enfermeiro) usando os índices do Cidadão e do Enfermeiro nas respetivas BDs:
     //      • Se essa função tiver encontrado e reservado uma vaga => status = OK;
     //      • Se essa função não conseguiu encontrar uma vaga livre => status = AGUARDAR.
@@ -303,6 +302,7 @@ void processa_pedido() {
             }
         }
     }
+    sem_mutex_up();
     // S5.4) Se no final de todos os checks, status for OK, chama a função vacina(),
     if (OK == resposta.dados.status){
         vacina();
@@ -384,7 +384,7 @@ void servidor_dedicado() {
     sucesso("S7.6) Cidadão atualizado na BD para estado_vacinacao=%d, Enfermeiro atualizado na BD para nr_vacinas_dadas=%d e disponibilidade=%d", db->cidadaos[db->vagas[vaga_ativa].index_cidadao].estado_vacinacao, db->enfermeiros[db->vagas[vaga_ativa].index_enfermeiro].nr_vacinas_dadas, db->enfermeiros[db->vagas[vaga_ativa].index_enfermeiro].disponibilidade);  
     sem_mutex_up();
     // S7.7) Liberta a vaga vaga_ativa da BD de Vagas, invocando a função liberta_vaga(vaga_ativa);
-    liberta_vaga(vaga_ativa);  // tentou libertar a vaga e deu erro "Terminated"
+    liberta_vaga(vaga_ativa);
     // S7.8) Termina o processo Servidor Dedicado (filho) com exit status 0.
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
     sucesso("S7.8) Servidor dedicado Terminado"); 
@@ -406,7 +406,7 @@ int reserva_vaga(int index_cidadao, int index_enfermeiro) {
     // Outputs esperados (itens entre <> substituídos pelos valores correspondentes):
     debug("%d", vaga_ativa);
     int v;
-    sem_mutex_down();
+    //sem_mutex_down();
     for(v = 0; v < MAX_VAGAS; v++){
         if (db->vagas[v].index_cidadao < 0){
             vaga_ativa = v;
@@ -416,8 +416,8 @@ int reserva_vaga(int index_cidadao, int index_enfermeiro) {
             break;
         }
     }
-    sem_mutex_up();
     sucesso("S8.1.1) Encontrou uma vaga livre com o index %d", v);
+    //sem_mutex_up();
     // S8.1.3) Retorna o valor do índice de vagas vaga_ativa ou -1 se não encontrou nenhuma vaga
     return vaga_ativa;
 
@@ -453,8 +453,6 @@ void cancela_pedido() {
             cid = c;
         }
     }
-    sem_mutex_up();
-    sem_mutex_down();
     for(int v = 0; v < MAX_VAGAS; v++){
         if (db->vagas[v].index_cidadao == cid){  
             sucesso("S10.1) Foi encontrada a sessão do cidadão %d, %s na sala com o index %d", db->cidadaos[cid].num_utente, db->cidadaos[cid].nome, cid);
@@ -464,8 +462,8 @@ void cancela_pedido() {
             sucesso("S10.2) Enviado sinal SIGTERM ao Servidor Dedicado com PID=%d", db->vagas[v].PID_filho);
         }
     }
-    erro("S10.1) Não foi encontrada nenhuma sessão do cidadão %d, %s", db->cidadaos[cid].num_utente, db->cidadaos[cid].nome);
     sem_mutex_up();
+    erro("S10.1) Não foi encontrada nenhuma sessão do cidadão %d, %s", db->cidadaos[cid].num_utente, db->cidadaos[cid].nome); 
 
     debug(">");
 }
@@ -483,7 +481,6 @@ void termina_servidor(int sinal) {
     debug("PID: %d", db->vagas[vaga_ativa].PID_filho);
     for(int v = 0; v < MAX_VAGAS; v++){
         if(db->vagas[v].index_cidadao != -1){
-            sem_mutex_up();
             kill(db->vagas[v].PID_filho, SIGTERM);
         }
     }
@@ -491,6 +488,7 @@ void termina_servidor(int sinal) {
     save_binary(FILE_ENFERMEIROS, db->enfermeiros, db->num_enfermeiros * sizeof(Enfermeiro));
     // S11.3) Grava o ficheiro FILE_CIDADAOS, usando a função save_binary();
     save_binary(FILE_CIDADAOS, db->cidadaos, db->num_cidadaos * sizeof(Cidadao));
+    sem_mutex_up();
     // S11.4) Remove do sistema (IPC Remove) os semáforos, a Memória Partilhada e a Fila de Mensagens.
     semctl(sem_id, 1, IPC_RMID);
     shmctl(shm_id, IPC_RMID, 0);
