@@ -407,14 +407,17 @@ int reserva_vaga(int index_cidadao, int index_enfermeiro) {
     for(v = 0; v < MAX_VAGAS; v++){
         if (db->vagas[v].index_cidadao < 0){
             vaga_ativa = v;
+            sucesso("S8.1.1) Encontrou uma vaga livre com o index %d", v);
     // S8.1.2) Atualiza a entrada de Vagas vaga_ativa com o índice do cidadão e do enfermeiro
             db->vagas[vaga_ativa].index_cidadao = index_cidadao;
             db->vagas[vaga_ativa].index_enfermeiro = index_enfermeiro;
             break;
+        } else {
+            erro("S8.1.3) Não foi encontrada nenhuma vaga livre");
         }
     }
-    sucesso("S8.1.1) Encontrou uma vaga livre com o index %d", v);
     // S8.1.3) Retorna o valor do índice de vagas vaga_ativa ou -1 se não encontrou nenhuma vaga
+    sucesso("S8.1.3) Foi reservada a vaga livre com o index %d", vaga_ativa);
     return vaga_ativa;
 
     debug(">");
@@ -429,6 +432,7 @@ void liberta_vaga(int index_vaga) {
     sem_mutex_down();
     db->cidadaos[db->vagas[index_vaga].index_cidadao].PID_cidadao = -1;
     db->vagas[index_vaga].index_cidadao = -1; 
+    sucesso("S9) A vaga com o index %d foi libertada", index_vaga);
     sem_mutex_up();
 
     debug(">");
